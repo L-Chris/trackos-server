@@ -51,6 +51,32 @@ export class LocationRepository {
     });
   }
 
+  async createLocationPoints(payloads: Array<{
+    userId: number;
+    deviceId: number;
+    latitude: number;
+    longitude: number;
+    recordedAt: Date;
+    accuracy?: number;
+    speed?: number;
+    heading?: number;
+    altitude?: number;
+  }>) {
+    return prisma.locationPoint.createMany({
+      data: payloads.map((payload) => ({
+        userId: payload.userId,
+        deviceId: payload.deviceId,
+        latitude: new Prisma.Decimal(payload.latitude),
+        longitude: new Prisma.Decimal(payload.longitude),
+        recordedAt: payload.recordedAt,
+        accuracy: payload.accuracy,
+        speed: payload.speed,
+        heading: payload.heading,
+        altitude: payload.altitude,
+      })),
+    });
+  }
+
   async findLocationPointsByUserAndRange(userExternalId: string, startAt: Date, endAt: Date) {
     return prisma.locationPoint.findMany({
       where: {

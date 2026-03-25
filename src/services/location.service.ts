@@ -1,6 +1,11 @@
 import { BadRequestError } from 'routing-controllers';
 import { Service } from 'typedi';
-import { QueryDailySummaryDto, QueryLocationsDto, ReportLocationDto } from '../dto/location.dto';
+import {
+  QueryDailySummaryDto,
+  QueryLocationsDto,
+  ReportLocationBatchDto,
+  ReportLocationDto,
+} from '../dto/location.dto';
 import { LocationRepository } from '../repositories/location.repository';
 import { DailyLocationSummary } from '../types/location';
 
@@ -29,6 +34,33 @@ export class LocationService {
       userId: payload.userId,
       deviceId: payload.deviceId,
       recordedAt: locationPoint.recordedAt.toISOString(),
+    };
+  }
+
+  async reportLocationBatch(payload: ReportLocationBatchDto) {
+    for (const record of payload.records) {
+      this.validateRange(record.recordedAt, record.recordedAt);
+    }
+
+    const { user, device } = await this.locationRepository.upsertUserAndDevice(payload.userId, payload.deviceId);
+    const result = await this.locationRepository.createLocationPoints(
+      payload.records.map((record) => ({
+        userId: user.id,
+        deviceId: device.id,
+        latitude: record.latitude,
+        longitude: record.longitude,
+        recordedAt: record.recordedAt,
+        accuracy: record.accuracy,
+        speed: record.speed,
+        heading: record.heading,
+        altitude: record.altitude,
+      })),
+    );
+
+    return {
+      userId: payload.userId,
+      deviceId: payload.deviceId,
+      acceptedCount: result.count,
     };
   }
 

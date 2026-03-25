@@ -1,5 +1,8 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsDate,
   IsNotEmpty,
   IsNumber,
@@ -7,17 +10,10 @@ import {
   IsString,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
 
-export class ReportLocationDto {
-  @IsString()
-  @IsNotEmpty()
-  userId!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  deviceId!: string;
-
+export class ReportLocationRecordDto {
   @Type(() => Number)
   @IsNumber()
   @Min(-90)
@@ -57,6 +53,45 @@ export class ReportLocationDto {
   @IsOptional()
   @IsNumber()
   altitude?: number;
+}
+
+export class ReportLocationDto extends ReportLocationRecordDto {
+  @IsString()
+  @IsNotEmpty()
+  userId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  deviceId!: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  declare latitude: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  declare longitude: number;
+}
+
+export class ReportLocationBatchDto {
+  @IsString()
+  @IsNotEmpty()
+  userId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  deviceId!: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => ReportLocationRecordDto)
+  records!: ReportLocationRecordDto[];
 }
 
 export class QueryLocationsDto {

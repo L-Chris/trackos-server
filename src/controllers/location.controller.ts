@@ -1,6 +1,11 @@
 import { Body, Get, JsonController, Post, QueryParams } from 'routing-controllers';
 import { Service } from 'typedi';
-import { QueryDailySummaryDto, QueryLocationsDto, ReportLocationDto } from '../dto/location.dto';
+import {
+  QueryDailySummaryDto,
+  QueryLocationsDto,
+  ReportLocationBatchDto,
+  ReportLocationDto,
+} from '../dto/location.dto';
 import { LocationService } from '../services/location.service';
 
 @Service()
@@ -11,6 +16,16 @@ export class LocationController {
   @Post('/report')
   async report(@Body({ required: true }) body: ReportLocationDto) {
     const result = await this.locationService.reportLocation(body);
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Post('/report/batch')
+  async reportBatch(@Body({ required: true }) body: ReportLocationBatchDto) {
+    const result = await this.locationService.reportLocationBatch(body);
 
     return {
       success: true,
