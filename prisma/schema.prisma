@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  externalId     String          @unique @db.VarChar(64)
+  devices        Device[]
+  locationPoints LocationPoint[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Device {
+  id             Int             @id @default(autoincrement())
+  externalId     String          @unique @db.VarChar(128)
+  userId         Int
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationPoints LocationPoint[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model LocationPoint {
+  id          BigInt   @id @default(autoincrement())
+  userId      Int
+  deviceId    Int
+  latitude    Decimal  @db.Decimal(10, 7)
+  longitude   Decimal  @db.Decimal(10, 7)
+  recordedAt  DateTime
+  accuracy    Float?
+  speed       Float?
+  heading     Float?
+  altitude    Float?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+  @@index([deviceId, recordedAt])
+}
