@@ -3,6 +3,7 @@ import bodyParser from 'koa-bodyparser';
 import { createKoaServer, useContainer } from 'routing-controllers';
 import { Container } from 'typedi';
 import { env } from './config/env';
+import { AppUsageSummaryController } from './controllers/app-usage-summary.controller';
 import { HealthController } from './controllers/health.controller';
 import { LocationController } from './controllers/location.controller';
 import { ErrorHandlerMiddleware } from './middlewares/error-handler';
@@ -20,7 +21,7 @@ export function createApp() {
       whitelist: true,
       forbidNonWhitelisted: true,
     },
-    controllers: [HealthController, LocationController],
+    controllers: [HealthController, LocationController, AppUsageSummaryController],
     middlewares: [ErrorHandlerMiddleware, RequestLoggerMiddleware],
   });
 

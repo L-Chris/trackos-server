@@ -8,22 +8,24 @@ datasource db {
 }
 
 model User {
-  id             Int             @id @default(autoincrement())
-  externalId     String          @unique @db.VarChar(64)
-  devices        Device[]
-  locationPoints LocationPoint[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                Int               @id @default(autoincrement())
+  externalId        String            @unique @db.VarChar(64)
+  devices           Device[]
+  locationPoints    LocationPoint[]
+  appUsageSummaries AppUsageSummary[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 model Device {
-  id             Int             @id @default(autoincrement())
-  externalId     String          @unique @db.VarChar(128)
-  userId         Int
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  locationPoints LocationPoint[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                Int               @id @default(autoincrement())
+  externalId        String            @unique @db.VarChar(128)
+  userId            Int
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  locationPoints    LocationPoint[]
+  appUsageSummaries AppUsageSummary[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   @@index([userId])
 }
@@ -45,4 +47,24 @@ model LocationPoint {
 
   @@index([userId, recordedAt])
   @@index([deviceId, recordedAt])
+}
+
+model AppUsageSummary {
+  id               BigInt   @id @default(autoincrement())
+  recordKey        String   @unique @db.VarChar(255)
+  userId           Int
+  deviceId         Int
+  packageName      String   @db.VarChar(255)
+  appName          String   @db.VarChar(255)
+  windowStartAt    DateTime
+  windowEndAt      DateTime
+  foregroundTimeMs BigInt
+  lastUsedAt       DateTime?
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device           Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, windowEndAt])
+  @@index([deviceId, windowEndAt])
+  @@index([packageName, windowEndAt])
 }
