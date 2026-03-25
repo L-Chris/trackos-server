@@ -6,8 +6,9 @@ import {
   ReportLocationBatchDto,
   ReportLocationDto,
 } from '../dto/location.dto';
+import { wgs84ToGcj02 } from '../lib/geo';
 import { LocationRepository } from '../repositories/location.repository';
-import { DailyLocationSummary } from '../types/location';
+import { DailyLocationSummary, LocationPointView } from '../types/location';
 
 @Service()
 export class LocationService {
@@ -75,17 +76,26 @@ export class LocationService {
 
     return {
       userId: query.userId,
-      points: locationPoints.map((point) => ({
-        id: point.id.toString(),
-        deviceId: point.device.externalId,
-        latitude: point.latitude.toNumber(),
-        longitude: point.longitude.toNumber(),
-        recordedAt: point.recordedAt.toISOString(),
-        accuracy: point.accuracy,
-        speed: point.speed,
-        heading: point.heading,
-        altitude: point.altitude,
-      })),
+      points: locationPoints.map((point): LocationPointView => {
+        const rawLatitude = point.latitude.toNumber();
+        const rawLongitude = point.longitude.toNumber();
+        const correctedPoint = wgs84ToGcj02(rawLatitude, rawLongitude);
+
+        return {
+          id: point.id.toString(),
+          deviceId: point.device.externalId,
+          latitude: correctedPoint.latitude,
+          longitude: correctedPoint.longitude,
+          rawLatitude,
+          rawLongitude,
+          coordinateSystem: 'GCJ-02',
+          recordedAt: point.recordedAt.toISOString(),
+          accuracy: point.accuracy,
+          speed: point.speed,
+          heading: point.heading,
+          altitude: point.altitude,
+        };
+      }),
     };
   }
 
