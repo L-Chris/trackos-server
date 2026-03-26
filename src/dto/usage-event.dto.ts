@@ -5,9 +5,12 @@ import {
   IsArray,
   IsDate,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -84,6 +87,19 @@ export class QueryUsageEventsDto {
   @IsNotEmpty()
   userId!: string;
 
+  @IsOptional()
+  @IsString()
+  deviceId?: string;
+
+  @IsOptional()
+  @IsString()
+  packageName?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(usageEventTypes)
+  eventType?: string;
+
   @Type(() => Date)
   @IsDate()
   startAt!: Date;
@@ -91,4 +107,17 @@ export class QueryUsageEventsDto {
   @Type(() => Date)
   @IsDate()
   endAt!: Date;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  limit?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset?: number;
 }

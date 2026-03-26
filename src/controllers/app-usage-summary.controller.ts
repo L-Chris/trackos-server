@@ -3,6 +3,8 @@ import { Service } from 'typedi';
 import {
   QueryAppUsageSummariesDto,
   QueryDailyAppUsageSummaryDto,
+  QueryUsageRankingDto,
+  QueryUsageTrendDto,
   ReportAppUsageSummaryBatchDto,
   ReportAppUsageSummaryDto,
 } from '../dto/app-usage-summary.dto';
@@ -46,6 +48,26 @@ export class AppUsageSummaryController {
   @Get('/daily-summary')
   async getDailySummary(@QueryParams() query: QueryDailyAppUsageSummaryDto) {
     const result = await this.appUsageSummaryService.queryDailySummary(query);
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Get('/ranking')
+  async getRanking(@QueryParams() query: QueryUsageRankingDto) {
+    const result = await this.appUsageSummaryService.queryUsageRanking(query);
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Get('/trend')
+  async getTrend(@QueryParams() query: QueryUsageTrendDto) {
+    const result = await this.appUsageSummaryService.queryUsageTrend(query);
 
     return {
       success: true,

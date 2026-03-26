@@ -4,10 +4,12 @@ import {
   ArrayMinSize,
   IsArray,
   IsDate,
+  IsInt,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
+  IsNumber,
   IsString,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -76,6 +78,14 @@ export class QueryAppUsageSummariesDto {
   @IsNotEmpty()
   userId!: string;
 
+  @IsOptional()
+  @IsString()
+  deviceId?: string;
+
+  @IsOptional()
+  @IsString()
+  packageName?: string;
+
   @Type(() => Date)
   @IsDate()
   startAt!: Date;
@@ -90,6 +100,14 @@ export class QueryDailyAppUsageSummaryDto {
   @IsNotEmpty()
   userId!: string;
 
+  @IsOptional()
+  @IsString()
+  deviceId?: string;
+
+  @IsOptional()
+  @IsString()
+  packageName?: string;
+
   @Type(() => Date)
   @IsDate()
   startAt!: Date;
@@ -97,4 +115,19 @@ export class QueryDailyAppUsageSummaryDto {
   @Type(() => Date)
   @IsDate()
   endAt!: Date;
+}
+
+export class QueryUsageRankingDto extends QueryAppUsageSummariesDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+}
+
+export class QueryUsageTrendDto extends QueryAppUsageSummariesDto {
+  @IsOptional()
+  @IsString()
+  bucket?: string;
 }

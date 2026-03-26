@@ -74,11 +74,16 @@ export class UsageEventService {
       throw new BadRequestError('startAt must be earlier than or equal to endAt');
     }
 
-    const events = await this.usageEventRepository.findUsageEventsByUserAndRange(
-      query.userId,
-      query.startAt,
-      query.endAt,
-    );
+    const events = await this.usageEventRepository.findUsageEventsByUserAndRange({
+      userExternalId: query.userId,
+      startAt: query.startAt,
+      endAt: query.endAt,
+      deviceExternalId: query.deviceId,
+      packageName: query.packageName,
+      eventType: query.eventType,
+      limit: query.limit,
+      offset: query.offset,
+    });
 
     return {
       userId: query.userId,

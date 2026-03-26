@@ -58,15 +58,31 @@ export class AppUsageSummaryRepository {
     });
   }
 
-  async findAppUsageSummariesByUserAndRange(userExternalId: string, startAt: Date, endAt: Date) {
+  async findAppUsageSummariesByUserAndRange(payload: {
+    userExternalId: string;
+    startAt: Date;
+    endAt: Date;
+    deviceExternalId?: string;
+    packageName?: string;
+  }) {
     return prisma.appUsageSummary.findMany({
       where: {
         user: {
-          externalId: userExternalId,
+          externalId: payload.userExternalId,
         },
+        device: payload.deviceExternalId
+          ? {
+              externalId: payload.deviceExternalId,
+            }
+          : undefined,
+        packageName: payload.packageName
+          ? {
+              contains: payload.packageName,
+            }
+          : undefined,
         windowEndAt: {
-          gte: startAt,
-          lte: endAt,
+          gte: payload.startAt,
+          lte: payload.endAt,
         },
       },
       orderBy: {

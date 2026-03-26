@@ -21,3 +21,19 @@ export interface DailyAppUsageSummary {
   date: string;
   rankings: DailyAppUsageRanking[];
 }
+
+export interface UsageRankingView {
+  packageName: string;
+  appName: string;
+  totalForegroundTimeMs: number;
+  lastUsedAt: string | null;
+  deviceCount: number;
+  recordCount: number;
+}
+
+export interface UsageTrendBucketView {
+  bucketStartAt: string;
+  bucketEndAt: string;
+  totalForegroundTimeMs: number;
+  activeAppCount: number;
+}

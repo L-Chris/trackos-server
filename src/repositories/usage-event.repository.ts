@@ -58,20 +58,42 @@ export class UsageEventRepository {
     });
   }
 
-  async findUsageEventsByUserAndRange(userExternalId: string, startAt: Date, endAt: Date) {
+  async findUsageEventsByUserAndRange(payload: {
+    userExternalId: string;
+    startAt: Date;
+    endAt: Date;
+    deviceExternalId?: string;
+    packageName?: string;
+    eventType?: string;
+    limit?: number;
+    offset?: number;
+  }) {
     return prisma.usageEvent.findMany({
       where: {
         user: {
-          externalId: userExternalId,
+          externalId: payload.userExternalId,
         },
+        device: payload.deviceExternalId
+          ? {
+              externalId: payload.deviceExternalId,
+            }
+          : undefined,
+        packageName: payload.packageName
+          ? {
+              contains: payload.packageName,
+            }
+          : undefined,
+        eventType: payload.eventType,
         occurredAt: {
-          gte: startAt,
-          lte: endAt,
+          gte: payload.startAt,
+          lte: payload.endAt,
         },
       },
       orderBy: {
         occurredAt: 'asc',
       },
+      take: payload.limit,
+      skip: payload.offset,
       include: {
         device: true,
       },
