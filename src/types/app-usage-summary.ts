@@ -6,6 +6,7 @@ export interface AppUsageSummaryView {
   windowStartAt: string;
   windowEndAt: string;
   foregroundTimeMs: number;
+  cappedForegroundTimeMs: number;
   lastUsedAt: string | null;
 }
 

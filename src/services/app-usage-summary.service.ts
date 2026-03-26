@@ -91,16 +91,21 @@ export class AppUsageSummaryService {
     return {
       userId: query.userId,
       summaries: summaries.map(
-        (summary): AppUsageSummaryView => ({
-          id: summary.id.toString(),
-          deviceId: summary.device.externalId,
-          packageName: summary.packageName,
-          appName: summary.appName,
-          windowStartAt: summary.windowStartAt.toISOString(),
-          windowEndAt: summary.windowEndAt.toISOString(),
-          foregroundTimeMs: Number(summary.foregroundTimeMs),
-          lastUsedAt: summary.lastUsedAt?.toISOString() ?? null,
-        }),
+        (summary): AppUsageSummaryView => {
+          const cappedForegroundTimeMs = this.toEffectiveForegroundTimeMs(summary);
+
+          return {
+            id: summary.id.toString(),
+            deviceId: summary.device.externalId,
+            packageName: summary.packageName,
+            appName: summary.appName,
+            windowStartAt: summary.windowStartAt.toISOString(),
+            windowEndAt: summary.windowEndAt.toISOString(),
+            foregroundTimeMs: cappedForegroundTimeMs,
+            cappedForegroundTimeMs,
+            lastUsedAt: summary.lastUsedAt?.toISOString() ?? null,
+          };
+        },
       ),
     };
   }
@@ -123,12 +128,13 @@ export class AppUsageSummaryService {
       const dayRanking = dailyMap.get(date) ?? new Map<string, DailyAppUsageRanking>();
       const existing = dayRanking.get(summary.packageName);
       const lastUsedAt = summary.lastUsedAt?.toISOString() ?? null;
+      const effectiveForegroundTimeMs = this.toEffectiveForegroundTimeMs(summary);
 
       if (!existing) {
         dayRanking.set(summary.packageName, {
           packageName: summary.packageName,
           appName: summary.appName,
-          totalForegroundTimeMs: Number(summary.foregroundTimeMs),
+          totalForegroundTimeMs: effectiveForegroundTimeMs,
           lastUsedAt,
           recordCount: 1,
         });
@@ -136,7 +142,7 @@ export class AppUsageSummaryService {
         continue;
       }
 
-      existing.totalForegroundTimeMs += Number(summary.foregroundTimeMs);
+      existing.totalForegroundTimeMs += effectiveForegroundTimeMs;
       existing.recordCount += 1;
       if (lastUsedAt != null && (existing.lastUsedAt == null || existing.lastUsedAt < lastUsedAt)) {
         existing.lastUsedAt = lastUsedAt;
@@ -174,12 +180,13 @@ export class AppUsageSummaryService {
     for (const summary of summaries) {
       const existing = rankingMap.get(summary.packageName);
       const lastUsedAt = summary.lastUsedAt?.toISOString() ?? null;
+      const effectiveForegroundTimeMs = this.toEffectiveForegroundTimeMs(summary);
 
       if (!existing) {
         rankingMap.set(summary.packageName, {
           packageName: summary.packageName,
           appName: summary.appName,
-          totalForegroundTimeMs: Number(summary.foregroundTimeMs),
+          totalForegroundTimeMs: effectiveForegroundTimeMs,
           lastUsedAt,
           deviceCount: 1,
           recordCount: 1,
@@ -188,7 +195,7 @@ export class AppUsageSummaryService {
         continue;
       }
 
-      existing.totalForegroundTimeMs += Number(summary.foregroundTimeMs);
+      existing.totalForegroundTimeMs += effectiveForegroundTimeMs;
       existing.recordCount += 1;
       existing.deviceIds.add(summary.device.externalId);
       existing.deviceCount = existing.deviceIds.size;
@@ -232,14 +239,14 @@ export class AppUsageSummaryService {
         bucketMap.set(bucketKey, {
           bucketStartAt: bucketStart.toISOString(),
           bucketEndAt: new Date(bucketStart.getTime() + bucketMinutes * 60 * 1000).toISOString(),
-          totalForegroundTimeMs: Number(summary.foregroundTimeMs),
+          totalForegroundTimeMs: this.toEffectiveForegroundTimeMs(summary),
           activeAppCount: 1,
           packageNames: new Set([summary.packageName]),
         });
         continue;
       }
 
-      existing.totalForegroundTimeMs += Number(summary.foregroundTimeMs);
+      existing.totalForegroundTimeMs += this.toEffectiveForegroundTimeMs(summary);
       existing.packageNames.add(summary.packageName);
       existing.activeAppCount = existing.packageNames.size;
     }
@@ -272,6 +279,16 @@ export class AppUsageSummaryService {
   private floorToBucket(date: Date, bucketMinutes: number) {
     const bucketMs = bucketMinutes * 60 * 1000;
     return new Date(Math.floor(date.getTime() / bucketMs) * bucketMs);
+  }
+
+  private toEffectiveForegroundTimeMs(summary: {
+    foregroundTimeMs: bigint | number;
+    windowStartAt: Date;
+    windowEndAt: Date;
+  }) {
+    const rawForegroundTimeMs = Number(summary.foregroundTimeMs);
+    const windowDurationMs = Math.max(0, summary.windowEndAt.getTime() - summary.windowStartAt.getTime());
+    return Math.max(0, Math.min(rawForegroundTimeMs, windowDurationMs));
   }
 
   private validateWindow(startAt: Date, endAt: Date, foregroundTimeMs: number) {
