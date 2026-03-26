@@ -6,6 +6,7 @@ import { env } from './config/env';
 import { AppUsageSummaryController } from './controllers/app-usage-summary.controller';
 import { HealthController } from './controllers/health.controller';
 import { LocationController } from './controllers/location.controller';
+import { UsageEventController } from './controllers/usage-event.controller';
 import { ErrorHandlerMiddleware } from './middlewares/error-handler';
 import { RequestLoggerMiddleware } from './middlewares/request-logger';
 
@@ -21,7 +22,7 @@ export function createApp() {
       whitelist: true,
       forbidNonWhitelisted: true,
     },
-    controllers: [HealthController, LocationController, AppUsageSummaryController],
+    controllers: [HealthController, LocationController, AppUsageSummaryController, UsageEventController],
     middlewares: [ErrorHandlerMiddleware, RequestLoggerMiddleware],
   });
 
