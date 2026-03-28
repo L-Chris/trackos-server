@@ -14,6 +14,7 @@ model User {
   locationPoints    LocationPoint[]
   appUsageSummaries AppUsageSummary[]
   usageEvents       UsageEvent[]
+  moveEvents        MoveEvent[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 }
@@ -26,6 +27,7 @@ model Device {
   locationPoints    LocationPoint[]
   appUsageSummaries AppUsageSummary[]
   usageEvents       UsageEvent[]
+  moveEvents        MoveEvent[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
@@ -89,4 +91,21 @@ model UsageEvent {
   @@index([userId, occurredAt])
   @@index([deviceId, occurredAt])
   @@index([packageName, occurredAt])
+}
+
+model MoveEvent {
+  id          BigInt   @id @default(autoincrement())
+  recordKey   String   @unique @db.VarChar(255)
+  userId      Int
+  deviceId    Int
+  moveType    String   @db.VarChar(64)
+  confidence  Float?
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([deviceId, occurredAt])
+  @@index([moveType, occurredAt])
 }
