@@ -1,6 +1,7 @@
 import { BadRequestError } from 'routing-controllers';
 import { Service } from 'typedi';
 import { QueryStayPointsDto } from '../dto/query-stay-points.dto';
+import { reverseGeocode } from '../lib/amap';
 import { wgs84ToGcj02 } from '../lib/geo';
 import { haversineDistance } from '../lib/geospatial';
 import { stDbscan } from '../lib/st-dbscan';
@@ -49,7 +50,19 @@ export class StayPointService {
     const clusteredPointCount = clusters.reduce((sum, c) => sum + c.length, 0);
     const noisePointCount = locationPoints.length - clusteredPointCount;
 
-    const stayPoints: StayPoint[] = clusters.map((memberIndices, clusterIdx) => {
+    // Build cluster geometries (without place info yet)
+    interface ClusterGeometry {
+      id: number;
+      gcjLat: number;
+      gcjLon: number;
+      startTime: string;
+      endTime: string;
+      durationSec: number;
+      pointCount: number;
+      radiusM: number;
+    }
+
+    const geometries: ClusterGeometry[] = clusters.map((memberIndices, clusterIdx) => {
       const members = memberIndices.map((i) => ({
         lat: algorithmInput[i].lat,
         lon: algorithmInput[i].lon,
@@ -79,8 +92,8 @@ export class StayPointService {
 
       return {
         id: clusterIdx,
-        centerLat: corrected.latitude,
-        centerLon: corrected.longitude,
+        gcjLat: corrected.latitude,
+        gcjLon: corrected.longitude,
         startTime: new Date(startTimeMs).toISOString(),
         endTime: new Date(endTimeMs).toISOString(),
         durationSec,
@@ -89,8 +102,31 @@ export class StayPointService {
       };
     });
 
-    stayPoints.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    // Enrich all stay points with place info concurrently (graceful degradation on failure)
+    const placeResults = await Promise.all(
+      geometries.map((g) => reverseGeocode(g.gcjLat, g.gcjLon)),
+    );
 
-    return { userId: query.userId, stayPoints, noisePointCount };
+    const enriched: StayPoint[] = geometries.map((g, i) => {
+      const place = placeResults[i];
+      return {
+        id: g.id,
+        centerLat: g.gcjLat,
+        centerLon: g.gcjLon,
+        startTime: g.startTime,
+        endTime: g.endTime,
+        durationSec: g.durationSec,
+        pointCount: g.pointCount,
+        radiusM: g.radiusM,
+        address: place?.address ?? null,
+        poiName: place?.poiName ?? null,
+        poiType: place?.poiType ?? null,
+        placeLabel: place?.placeLabel ?? null,
+      };
+    });
+
+    enriched.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    return { userId: query.userId, stayPoints: enriched, noisePointCount };
   }
 }
