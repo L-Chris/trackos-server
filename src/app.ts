@@ -7,6 +7,7 @@ import { AppUsageSummaryController } from './controllers/app-usage-summary.contr
 import { HealthController } from './controllers/health.controller';
 import { LocationController } from './controllers/location.controller';
 import { MoveEventController } from './controllers/move-event.controller';
+import { StayPointController } from './controllers/stay-point.controller';
 import { UsageEventController } from './controllers/usage-event.controller';
 import { ErrorHandlerMiddleware } from './middlewares/error-handler';
 import { RequestLoggerMiddleware } from './middlewares/request-logger';
@@ -23,7 +24,7 @@ export function createApp() {
       whitelist: true,
       forbidNonWhitelisted: true,
     },
-    controllers: [HealthController, LocationController, AppUsageSummaryController, UsageEventController, MoveEventController],
+    controllers: [HealthController, LocationController, AppUsageSummaryController, UsageEventController, MoveEventController, StayPointController],
     middlewares: [ErrorHandlerMiddleware, RequestLoggerMiddleware],
   });
 
