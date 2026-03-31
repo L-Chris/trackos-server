@@ -11,12 +11,14 @@ model User {
   id                Int               @id @default(autoincrement())
   externalId        String            @unique @db.VarChar(64)
   devices           Device[]
-  locationPoints    LocationPoint[]
-  appUsageSummaries AppUsageSummary[]
-  usageEvents       UsageEvent[]
-  moveEvents        MoveEvent[]
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  locationPoints             LocationPoint[]
+  appUsageSummaries          AppUsageSummary[]
+  usageEvents                UsageEvent[]
+  moveEvents                 MoveEvent[]
+  paymentNotificationSources PaymentNotificationSource[]
+  paymentRecords             PaymentRecord[]
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
 }
 
 model Device {
@@ -24,12 +26,14 @@ model Device {
   externalId        String            @unique @db.VarChar(128)
   userId            Int
   user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  locationPoints    LocationPoint[]
-  appUsageSummaries AppUsageSummary[]
-  usageEvents       UsageEvent[]
-  moveEvents        MoveEvent[]
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  locationPoints             LocationPoint[]
+  appUsageSummaries          AppUsageSummary[]
+  usageEvents                UsageEvent[]
+  moveEvents                 MoveEvent[]
+  paymentNotificationSources PaymentNotificationSource[]
+  paymentRecords             PaymentRecord[]
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
 
   @@index([userId])
 }
@@ -108,4 +112,56 @@ model MoveEvent {
   @@index([userId, occurredAt])
   @@index([deviceId, occurredAt])
   @@index([moveType, occurredAt])
+}
+
+model PaymentNotificationSource {
+  id              BigInt          @id @default(autoincrement())
+  recordKey       String          @unique @db.VarChar(512)
+  userId          Int
+  deviceId        Int
+  packageName     String          @db.VarChar(255)
+  notificationKey String          @db.VarChar(255)
+  postedAt        DateTime
+  receivedAt      DateTime
+  title           String          @db.VarChar(512)
+  text            String          @db.Text
+  bigText         String?         @db.Text
+  tickerText      String?         @db.VarChar(512)
+  sourceMetadata  String?         @db.Text
+  parseStatus     String          @default("PENDING") @db.VarChar(32)
+  parseAttempts   Int             @default(0)
+  nextRetryAt     DateTime?
+  lastError       String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device          Device          @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  paymentRecord   PaymentRecord?
+
+  @@index([userId, postedAt])
+  @@index([deviceId, postedAt])
+  @@index([parseStatus, nextRetryAt])
+}
+
+model PaymentRecord {
+  id                   BigInt                    @id @default(autoincrement())
+  sourceNotificationId BigInt                    @unique
+  userId               Int
+  deviceId             Int
+  channel              String                    @db.VarChar(64)
+  direction            String                    @db.VarChar(32)
+  amount               Decimal                   @db.Decimal(18, 4)
+  currency             String                    @default("CNY") @db.VarChar(16)
+  occurredAt           DateTime
+  counterparty         String?                   @db.VarChar(255)
+  scene                String?                   @db.VarChar(255)
+  summary              String?                   @db.VarChar(512)
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  source               PaymentNotificationSource @relation(fields: [sourceNotificationId], references: [id], onDelete: Cascade)
+  user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device               Device                    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([deviceId, occurredAt])
 }

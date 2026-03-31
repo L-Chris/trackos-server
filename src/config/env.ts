@@ -19,4 +19,8 @@ export const env = {
   port: Number(process.env.PORT ?? 3000),
   databaseUrl: process.env.DATABASE_URL ?? defaultDatabaseUrl,
   amapKey: process.env.AMAP_KEY ?? '',
+  aiBaseUrl: process.env.AI_BASE_URL ?? '',
+  aiApiKey: process.env.AI_API_KEY ?? '',
+  aiModel: process.env.AI_MODEL ?? 'gpt-4o-mini',
+  aiTimeoutMs: Number(process.env.AI_TIMEOUT_MS ?? 30000),
 };
