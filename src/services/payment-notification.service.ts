@@ -16,6 +16,18 @@ export class PaymentNotificationService {
       if (!record.recordKey.trim()) {
         throw new BadRequestError('recordKey must not be empty');
       }
+      if (!record.packageName.trim()) {
+        throw new BadRequestError('packageName must not be empty');
+      }
+      if (!record.notificationKey.trim()) {
+        throw new BadRequestError('notificationKey must not be empty');
+      }
+      if (!record.title.trim()) {
+        throw new BadRequestError('title must not be empty');
+      }
+      if (!record.text.trim()) {
+        throw new BadRequestError('text must not be empty');
+      }
       if (Number.isNaN(record.postedAt.getTime())) {
         throw new BadRequestError('postedAt must be a valid date');
       }

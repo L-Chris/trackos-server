@@ -1,6 +1,9 @@
 import { Service } from 'typedi';
 import { prisma } from '../lib/prisma';
 
+const MAX_PARSE_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 5 * 60 * 1000;
+
 @Service()
 export class PaymentNotificationRepository {
   async createPaymentNotifications(
@@ -20,19 +23,19 @@ export class PaymentNotificationRepository {
     }>,
   ) {
     return prisma.paymentNotificationSource.createMany({
-      data: payloads.map((p) => ({
-        recordKey: p.recordKey,
-        userId: p.userId,
-        deviceId: p.deviceId,
-        packageName: p.packageName,
-        notificationKey: p.notificationKey,
-        postedAt: p.postedAt,
-        receivedAt: p.receivedAt,
-        title: p.title,
-        text: p.text,
-        bigText: p.bigText,
-        tickerText: p.tickerText,
-        sourceMetadata: p.sourceMetadata,
+      data: payloads.map((payload) => ({
+        recordKey: payload.recordKey,
+        userId: payload.userId,
+        deviceId: payload.deviceId,
+        packageName: payload.packageName,
+        notificationKey: payload.notificationKey,
+        postedAt: payload.postedAt,
+        receivedAt: payload.receivedAt,
+        title: payload.title,
+        text: payload.text,
+        bigText: payload.bigText,
+        tickerText: payload.tickerText,
+        sourceMetadata: payload.sourceMetadata,
         parseStatus: 'PENDING',
       })),
       skipDuplicates: true,
@@ -47,7 +50,7 @@ export class PaymentNotificationRepository {
           { parseStatus: 'PENDING' },
           {
             parseStatus: 'FAILED',
-            parseAttempts: { lt: 3 },
+            parseAttempts: { lt: MAX_PARSE_ATTEMPTS },
             nextRetryAt: { lte: now },
           },
         ],
@@ -56,9 +59,11 @@ export class PaymentNotificationRepository {
       take: limit,
     });
 
-    if (records.length === 0) return [];
+    if (records.length === 0) {
+      return [];
+    }
 
-    const ids = records.map((r) => r.id);
+    const ids = records.map((record) => record.id);
     await prisma.paymentNotificationSource.updateMany({
       where: { id: { in: ids } },
       data: { parseStatus: 'PROCESSING' },
@@ -126,14 +131,19 @@ export class PaymentNotificationRepository {
       data: {
         parseStatus: 'IGNORED',
         parseAttempts: { increment: 1 },
+        lastError: null,
         nextRetryAt: null,
       },
     });
   }
 
-  async markFailed(id: bigint, error: string, attempts: number) {
+  async markFailed(id: bigint, error: string, currentAttempts: number) {
+    const nextAttempts = currentAttempts + 1;
     const nextRetryAt =
-      attempts < 3 ? new Date(Date.now() + 5 * 60 * 1000) : null;
+      nextAttempts < MAX_PARSE_ATTEMPTS
+        ? new Date(Date.now() + RETRY_DELAY_MS)
+        : null;
+
     await prisma.paymentNotificationSource.update({
       where: { id },
       data: {
