@@ -8,9 +8,10 @@ import { stDbscan } from '../lib/st-dbscan';
 import { LocationRepository } from '../repositories/location.repository';
 import { StayPoint } from '../types/stay-point';
 
-const DEFAULT_EPS1 = 200;    // meters
+const DEFAULT_EPS1 = 100;    // meter
 const DEFAULT_EPS2 = 1800;   // seconds (30 minutes)
-const DEFAULT_MIN_PTS = 5;
+const DEFAULT_MIN_PTS = 10;
+// 某个点周围（100m, 1800s）内只要有10个GPS点就能成核心点
 
 @Service()
 export class StayPointService {
